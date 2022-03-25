@@ -1,14 +1,15 @@
 import uniqid from "uniqid";
 import padlockSrc from "./assets/candado.png"
+import targetSrc from "./assets/target.png"
 
 
 const startBtn = document.getElementById('start')
 
-function random(min, max) {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min) + min); //The maximum is exclusive and the minimum is inclusive
-}
+// function random(min, max) {
+//   min = Math.ceil(min);
+//   max = Math.floor(max);
+//   return Math.floor(Math.random() * (max - min) + min); //The maximum is exclusive and the minimum is inclusive
+// }
 
 class Scene {
   constructor() {
@@ -22,16 +23,18 @@ class Scene {
     this.edges = [];
     this.selectedNode = null;
     this.prevSelectedNode = null;
+    this.isCliking = false;
     this.startClick = null;
     this.endClick = null;
+    this.target = null;
   }
   findSelectedNode(x, y) {
     this.nodes.forEach((e) => {
       if (e.x < x && e.x + e.width > x) {
         if (e.y < y && e.y + e.height > y) {
-          // e.color = "#ff0000"
           this.startClick = +new Date();
           this.selectedNode = e;
+          this.selectedNode.blocked = this.isCliking ? true : !this.selectedNode.blocked;
         }
       }
     })
@@ -41,11 +44,13 @@ class Scene {
       this.clear();
       this.update();
     }, 30);
-
-
     document.addEventListener('mousedown', (e) => {
       this.findSelectedNode(e.x, e.y - 80);
+      this.isCliking = true;
     });
+    document.addEventListener('mousemove', (e) => {
+      if(this.isCliking) this.findSelectedNode(e.x, e.y - 80);
+    })
     document.addEventListener('mouseup', this.handleMouseUp.bind(this));
   }
   clear() {
@@ -59,16 +64,15 @@ class Scene {
     clearInterval(this.updateIntervalID);
   }
   handleMouseUp(e) {
+    this.isCliking = false;
     if (this.selectedNode) {
-      this.selectedNode.color = "#00ff00";
       this.endClick = +new Date();
       let diff = this.endClick - this.startClick;
-      console.log(diff)
       if (diff < 100 && this.prevSelectedNode && this.selectedNode.id === this.prevSelectedNode.id) {
-        console.log('si')
-        this.selectedNode.blocked = !this.selectedNode.blocked;
-        // this.selectedNode.color = "#0000ff"
-        // if (this.lastSelectedNodes.length < 1) this.lastSelectedNodes.push(this.selectedNode)
+        this.selectedNode.blocked = false;
+        if(this.target) this.target.target = false;
+        this.target = this.selectedNode;
+        this.target.target = true;
       }
     }
     this.prevSelectedNode = this.selectedNode;
@@ -88,8 +92,6 @@ class Scene {
 
 const scene = new Scene();
 scene.start();
-
-console.log('Hello World')
 
 class Edge {
   constructor(neigh1, neigh2) {
@@ -119,8 +121,8 @@ class Node {
   constructor(x, y, text) {
     this.x = x;
     this.y = y;
-    this.width = 50;
-    this.height = 50;
+    this.width = 52;
+    this.height = 52;
     this.text = text;
     this.neighbors = [];
     this.color = "#00ff00";
@@ -128,26 +130,25 @@ class Node {
     this.id = uniqid();
     this.visited = false;
     this.blocked = false;
+    this.target = false;
     this.padlockImg = new Image();
     this.padlockImgAv = false;
+    this.targetImgAv = false;
     this.padlockImg.src = padlockSrc;
     this.padlockImg.onload = () => this.padlockImgAv = true;
+    this.targetImg = new Image();
+    this.targetImg.src = targetSrc;
+    this.targetImg.onload = () => this.targetImgAv = true;
   }
   update() {
     let context = scene.context;
-    // context.beginPath();
-    // context.lineWidth = 1;
-    // const startAngle = 0;
-    // const endAngle = Math.PI * 2;
-    // context.strokeStyle = this.borderColor;
-    // context.fillStyle = this.color;
-    // context.arc(this.x + this.width / 2, this.y + this.height / 2, this.width / 2, startAngle, endAngle);
-    // context.fill()
-    // context.stroke();
     context.fillStyle = this.color;
     context.fillRect(this.x,this.y,this.width,this.height)
     if(this.blocked && this.padlockImgAv){
       context.drawImage(this.padlockImg,this.x + 5,this.y + 5,this.width - 10,this.height - 10)
+    }
+    if(this.target && this.targetImgAv){
+      context.drawImage(this.targetImg,this.x + 5,this.y + 5,this.width - 10,this.height - 10)
     }
   }
 }
@@ -162,7 +163,6 @@ let arr = [
   [{x:10,y:130},{x:30,y:130},{x:50,y:130},{x:70,y:130},{x:90,y:130},{x:110,y:130},{x:130,y:130},{x:150,y:130},{x:170,y:130},{x:190,y:130},{x:210,y:130},{x:230,y:130},{x:250,y:130},{x:270,y:130},{x:290,y:130}],
   [{x:10,y:150},{x:30,y:150},{x:50,y:150},{x:70,y:150},{x:90,y:150},{x:110,y:150},{x:130,y:150},{x:150,y:150},{x:170,y:150},{x:190,y:150},{x:210,y:150},{x:230,y:150},{x:250,y:150},{x:270,y:150},{x:290,y:150}],
   [{x:10,y:170},{x:30,y:170},{x:50,y:170},{x:70,y:170},{x:90,y:170},{x:110,y:170},{x:130,y:170},{x:150,y:170},{x:170,y:170},{x:190,y:170},{x:210,y:170},{x:230,y:170},{x:250,y:170},{x:270,y:170},{x:290,y:170}],
-  // [{x:10,y:190},{x:30,y:190},{x:50,y:190},{x:70,y:190},{x:90,y:190},{x:110,y:190},{x:130,y:190},{x:150,y:190},{x:170,y:190},{x:190,y:190},{x:210,y:190},{x:230,y:190},{x:250,y:190},{x:270,y:190},{x:290,y:190}],
 ]
 
 function setNodes() {
@@ -191,8 +191,6 @@ function setNodes() {
   }
   nodes[0].start = true;
   nodes[0].borderColor = '#f00'
-  nodes[19].end = true;
-  nodes[19].borderColor = '#00f';
   scene.nodes = nodes;
 }
 
@@ -215,12 +213,10 @@ function dfs(start, target) {
       stack = []
     }
   }
-  // console.log(stack)
   drawPath(path)
 }
 
 function drawPath(path) {
-  // console.log(path)
   for (let i = 0; i < path.length; i++) {
     setTimeout(() => {
       if (i < 135) {
@@ -238,5 +234,5 @@ function drawPath(path) {
 }
 
 startBtn.onclick = () => {
-  dfs(scene.nodes[0], scene.nodes[19])
+  dfs(scene.nodes[0], scene.target)
 }
