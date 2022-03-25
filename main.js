@@ -89,6 +89,7 @@ class Scene {
 const scene = new Scene();
 scene.start();
 
+console.log('Hello World')
 
 class Edge {
   constructor(neigh1, neigh2) {
