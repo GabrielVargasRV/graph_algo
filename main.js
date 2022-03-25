@@ -1,4 +1,11 @@
 import uniqid from "uniqid";
+const startBtn = document.getElementById('start')
+
+function random(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min) + min); //The maximum is exclusive and the minimum is inclusive
+}
 
 class Scene {
   constructor() {
@@ -11,13 +18,14 @@ class Scene {
     this.nodes = [];
     this.edges = [];
     this.selectedNode = null;
+    this.lastSelectedNodes = [];
     this.startClick = null;
     this.endClick = null;
   }
-  findSelectedNode(x,y){
+  findSelectedNode(x, y) {
     this.nodes.forEach((e) => {
-      if(e.x < x && e.x + e.width > x){
-        if(e.y < y && e.y + e.height > y){
+      if (e.x < x && e.x + e.width > x) {
+        if (e.y < y && e.y + e.height > y) {
           e.color = "#ff0000"
           this.startClick = +new Date();
           this.selectedNode = e;
@@ -29,102 +37,204 @@ class Scene {
     this.updateIntervalID = setInterval(() => {
       this.clear();
       this.update();
-    }, 16);
-    document.addEventListener('mousedown',(e) => {
-      this.findSelectedNode(e.x,e.y - 80);
+    }, 30);
+
+
+    document.addEventListener('mousedown', (e) => {
+      this.findSelectedNode(e.x, e.y - 80);
     });
-    document.addEventListener('mouseup', (e) => {
-      if(this.selectedNode){
-        this.selectedNode.color = "#00ff00";
-        this.endClick = +new Date();
-        let diff = this.endClick - this.startClick;
-        if(diff < 150) this.selectedNode.color = "#0000ff"
-        console.log(diff)
-      }
-      this.selectedNode = null;
-    });
-    document.addEventListener('mousemove', (e) => {
-      if(this.selectedNode){
-        this.selectedNode.x = e.x - (this.selectedNode.width / 2);
-        this.selectedNode.y = e.y - 80 - (this.selectedNode.height / 2);
-      }
-    });
+    document.addEventListener('mouseup', this.handleMouseUp.bind(this));
+    // document.addEventListener('mousemove', this.handleMouseMove.bind(this));
   }
   clear() {
     this.context.clearRect(0, 0, this.width, this.height);
   }
   update() {
+    this.edges.forEach((e) => e.update())
     this.nodes.forEach((node) => node.update());
   }
-  stop(){
+  stop() {
     clearInterval(this.updateIntervalID);
   }
-
+  handleMouseUp(e) {
+    if (this.selectedNode) {
+      this.selectedNode.color = "#00ff00";
+      this.endClick = +new Date();
+      let diff = this.endClick - this.startClick;
+      if (diff < 100) {
+        this.selectedNode.color = "#0000ff"
+        if (this.lastSelectedNodes.length < 1) this.lastSelectedNodes.push(this.selectedNode)
+        else {
+          this.lastSelectedNodes.push(this.selectedNode)
+          this.lastSelectedNodes[0].neighbors.push(this.lastSelectedNodes[1])
+          this.lastSelectedNodes[1].neighbors.push(this.lastSelectedNodes[0])
+          const newEdge = new Edge(...this.lastSelectedNodes)
+          this.edges.push(newEdge);
+          this.lastSelectedNodes.forEach((e) => e.color = '#00ff00')
+          this.lastSelectedNodes = [];
+        }
+      }
+    }
+    this.selectedNode = null;
+  }
+  // handleMouseMove(e) {
+  //   if (this.selectedNode) {
+  //     this.selectedNode.x = e.x - (this.selectedNode.width / 2);
+  //     this.selectedNode.y = e.y - 80 - (this.selectedNode.height / 2);
+  //   }
+  // }
+  findNodeById(id) {
+    let node = null;
+    this.nodes.forEach((e) => e.id == id ? node = e : null)
+    return node
+  }
+  findEdge(n1, n2) {
+    let edge = null;
+    this.edges.forEach(e => e.link.has(n1) && e.link.has(n2) ? edge = e : null)
+    return edge;
+  }
 }
 
 const scene = new Scene();
 scene.start();
 
+
+class Edge {
+  constructor(neigh1, neigh2) {
+    this.n1 = neigh1;
+    this.n2 = neigh2;
+    this.link = new Set()
+    this.link.add(neigh1);
+    this.link.add(neigh2);
+    this.color = '#000'
+  }
+  update() {
+    const context = scene.context;
+    context.strokeStyle = this.color;
+    context.beginPath();
+    context.lineWidth = 2;
+    const fromX = this.n1.x + this.n1.width / 2
+    const fromY = this.n1.y + this.n1.height / 2
+    const toX = this.n2.x + this.n2.width / 2
+    const toY = this.n2.y + this.n2.height / 2
+    context.moveTo(fromX, fromY)
+    context.lineTo(toX, toY)
+    context.stroke()
+  }
+}
+
 class Node {
   constructor(x, y, text) {
     this.x = x;
     this.y = y;
-    this.width = 50;
-    this.height = 50;
+    this.width = 30;
+    this.height = 30;
     this.text = text;
-    this.edges = [];
+    this.neighbors = [];
     this.color = "#00ff00";
+    this.borderColor = this.color;
     this.id = uniqid();
+    this.visited = false;
   }
   update() {
-    let ctx = scene.context;
-    ctx.fillStyle = this.color;
-    ctx.fillRect(this.x, this.y, this.width, this.height);
+    let context = scene.context;
+    context.beginPath();
+    context.lineWidth = 1;
+    const startAngle = 0;
+    const endAngle = Math.PI * 2;
+    context.strokeStyle = this.borderColor;
+    context.fillStyle = this.color;
+    context.arc(this.x + this.width / 2, this.y + this.height / 2, this.width / 2, startAngle, endAngle);
+    context.fill()
+    context.stroke();
   }
 }
 
-function setNodes(){
-  let x = 10;
+let arr = [
+  [{x:10,y: 10},{x:30,y: 10},{x:50,y: 10},{x:70,y: 10},{x:90,y: 10},{x:110,y: 10},{x:130,y: 10},{x:150,y: 10},{x:170,y: 10},{x:190,y: 10},{x:210,y: 10},{x:230,y: 10},{x:250,y: 10},{x:270,y: 10},{x:290,y: 10}],
+  [{x:10,y: 30},{x:30,y: 30},{x:50,y: 30},{x:70,y: 30},{x:90,y: 30},{x:110,y: 30},{x:130,y: 30},{x:150,y: 30},{x:170,y: 30},{x:190,y: 30},{x:210,y: 30},{x:230,y: 30},{x:250,y: 30},{x:270,y: 30},{x:290,y: 30}],
+  [{x:10,y: 50},{x:30,y: 50},{x:50,y: 50},{x:70,y: 50},{x:90,y: 50},{x:110,y: 50},{x:130,y: 50},{x:150,y: 50},{x:170,y: 50},{x:190,y: 50},{x:210,y: 50},{x:230,y: 50},{x:250,y: 50},{x:270,y: 50},{x:290,y: 50}],
+  [{x:10,y: 70},{x:30,y: 70},{x:50,y: 70},{x:70,y: 70},{x:90,y: 70},{x:110,y: 70},{x:130,y: 70},{x:150,y: 70},{x:170,y: 70},{x:190,y: 70},{x:210,y: 70},{x:230,y: 70},{x:250,y: 70},{x:270,y: 70},{x:290,y: 70}],
+  [{x:10,y: 90},{x:30,y: 90},{x:50,y: 90},{x:70,y: 90},{x:90,y: 90},{x:110,y: 90},{x:130,y: 90},{x:150,y: 90},{x:170,y: 90},{x:190,y: 90},{x:210,y: 90},{x:230,y: 90},{x:250,y: 90},{x:270,y: 90},{x:290,y: 90}],
+  [{x:10,y:110},{x:30,y:110},{x:50,y:110},{x:70,y:110},{x:90,y:110},{x:110,y:110},{x:130,y:110},{x:150,y:110},{x:170,y:110},{x:190,y:110},{x:210,y:110},{x:230,y:110},{x:250,y:110},{x:270,y:110},{x:290,y:110}],
+  [{x:10,y:130},{x:30,y:130},{x:50,y:130},{x:70,y:130},{x:90,y:130},{x:110,y:130},{x:130,y:130},{x:150,y:130},{x:170,y:130},{x:190,y:130},{x:210,y:130},{x:230,y:130},{x:250,y:130},{x:270,y:130},{x:290,y:130}],
+  [{x:10,y:150},{x:30,y:150},{x:50,y:150},{x:70,y:150},{x:90,y:150},{x:110,y:150},{x:130,y:150},{x:150,y:150},{x:170,y:150},{x:190,y:150},{x:210,y:150},{x:230,y:150},{x:250,y:150},{x:270,y:150},{x:290,y:150}],
+  [{x:10,y:170},{x:30,y:170},{x:50,y:170},{x:70,y:170},{x:90,y:170},{x:110,y:170},{x:130,y:170},{x:150,y:170},{x:170,y:170},{x:190,y:170},{x:210,y:170},{x:230,y:170},{x:250,y:170},{x:270,y:170},{x:290,y:170}],
+  // [{x:10,y:190},{x:30,y:190},{x:50,y:190},{x:70,y:190},{x:90,y:190},{x:110,y:190},{x:130,y:190},{x:150,y:190},{x:170,y:190},{x:190,y:190},{x:210,y:190},{x:230,y:190},{x:250,y:190},{x:270,y:190},{x:290,y:190}],
+]
+
+function setNodes() {
   let nodes = []
-  for(let i = 0; i < 10; i++){
-    x += 70
-    nodes.push(new Node(x,10,'a'))
+  for(let i = 0; i < arr.length; i++){
+    for(let k = 0; k < arr[i].length; k++){
+      let x = arr[i][k].x * 2.8;
+      let y = arr[i][k].y * 2.8;
+      let node = new Node(x,y,`${i}${k}`);
+      if(i > 0){
+        let [nei] = nodes.filter((e) => e.text == `${i-1}${k}`)
+        node.neighbors.push(nei)
+        nei.neighbors.push(node)
+        let edge = new Edge(node,nei)
+        scene.edges.push(edge)
+      }
+      if(k > 0){
+        let [nei] = nodes.filter((e) => e.text == `${i}${k-1}`)
+        node.neighbors.push(nei)
+        nei.neighbors.push(node)
+        let edge = new Edge(node,nei)
+        scene.edges.push(edge)
+      }
+      nodes.push(node)
+    }
   }
+  nodes[0].start = true;
+  nodes[0].borderColor = '#f00'
+  nodes[19].end = true;
+  nodes[19].borderColor = '#00f';
   scene.nodes = nodes;
 }
 
 setNodes();
 
-let adj = {
-  a: ['b'],
-  b: ['c', 'd'],
-  c: ['f'],
-  d: ['e'],
-  f: ['g'],
-  e: ['j'],
-  j: ['h'],
-  g: ['h'],
-  h: []
-}
-
-let path = []
-
-function dfs(target) {
+function dfs(start, target) {
+  let path = []
   let stack = [];
-  stack.push('a')
-
-  while (stack.length) {
+  stack.push(start)
+  let len = 0;
+  while (stack.length > 0 && len < 300) {
+    len++
+    // console.log(stack)
     let current = stack.pop();
+    current.visited = true;
     path.push(current)
-    adj[current].forEach((e) => {
-      stack.push(e)
+    scene.findNodeById(current.id).neighbors.forEach((e) => {
+      if (!e.visited) stack.push(e)
     })
-    if (target === current) {
+    if (target.id === current.id) {
       stack = []
     }
   }
-
-  return path.join('->');
+  console.log(len)
+  drawPath(path)
 }
 
-console.log(dfs('g'))
+function drawPath(path) {
+  for (let i = 0; i < path.length; i++) {
+    setTimeout(() => {
+      if (i < 19) {
+        let node = scene.findNodeById(path[i].id)
+        let edge = scene.findEdge(path[i], path[i + 1])
+        if (node) {
+          node.borderColor = '#f09f';
+          node.color = '#f09f'
+        }
+        if (edge) edge.color = '#f09f'
+      }
+      return
+    }, i * 100)
+  }
+}
+
+startBtn.onclick = () => {
+  dfs(scene.nodes[0], scene.nodes[19])
+}
