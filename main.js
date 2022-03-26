@@ -2,7 +2,6 @@ import uniqid from "uniqid";
 import padlockSrc from "./assets/candado.png"
 import targetSrc from "./assets/target.png"
 
-
 const startBtn = document.getElementById('start')
 
 // function random(min, max) {
@@ -110,23 +109,6 @@ class Scene {
 const scene = new Scene();
 scene.start();
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class Edge {
   constructor(neigh1, neigh2) {
     this.n1 = neigh1;
@@ -150,25 +132,6 @@ class Edge {
     context.stroke()
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 class Node {
@@ -196,73 +159,33 @@ class Node {
   update() {
     let context = scene.context;
     context.fillStyle = this.color;
-    context.fillRect(this.x,this.y,this.width,this.height)
-    if(this.roll === 1 && this.padlockImgAv) context.drawImage(this.padlockImg,this.x + 5,this.y + 5,this.width - 10,this.height - 10);
-    if(this.roll === 2 && this.targetImgAv) context.drawImage(this.targetImg,this.x + 5,this.y + 5,this.width - 10,this.height - 10);
+    context.fillRect(this.x,this.y,this.width - 3,this.height - 3)
+    if(this.roll === 1 && this.padlockImgAv) context.drawImage(this.padlockImg,this.x + 3,this.y + 3,this.width - 10,this.height - 10);
+    if(this.roll === 2 && this.targetImgAv) context.drawImage(this.targetImg,this.x + 3,this.y + 3,this.width - 10,this.height - 10);
   }
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-let arr = [
-  [{x:10,y: 10},{x:30,y: 10},{x:50,y: 10},{x:70,y: 10},{x:90,y: 10},{x:110,y: 10},{x:130,y: 10},{x:150,y: 10},{x:170,y: 10},{x:190,y: 10},{x:210,y: 10},{x:230,y: 10},{x:250,y: 10},{x:270,y: 10},{x:290,y: 10}],
-  [{x:10,y: 30},{x:30,y: 30},{x:50,y: 30},{x:70,y: 30},{x:90,y: 30},{x:110,y: 30},{x:130,y: 30},{x:150,y: 30},{x:170,y: 30},{x:190,y: 30},{x:210,y: 30},{x:230,y: 30},{x:250,y: 30},{x:270,y: 30},{x:290,y: 30}],
-  [{x:10,y: 50},{x:30,y: 50},{x:50,y: 50},{x:70,y: 50},{x:90,y: 50},{x:110,y: 50},{x:130,y: 50},{x:150,y: 50},{x:170,y: 50},{x:190,y: 50},{x:210,y: 50},{x:230,y: 50},{x:250,y: 50},{x:270,y: 50},{x:290,y: 50}],
-  [{x:10,y: 70},{x:30,y: 70},{x:50,y: 70},{x:70,y: 70},{x:90,y: 70},{x:110,y: 70},{x:130,y: 70},{x:150,y: 70},{x:170,y: 70},{x:190,y: 70},{x:210,y: 70},{x:230,y: 70},{x:250,y: 70},{x:270,y: 70},{x:290,y: 70}],
-  [{x:10,y: 90},{x:30,y: 90},{x:50,y: 90},{x:70,y: 90},{x:90,y: 90},{x:110,y: 90},{x:130,y: 90},{x:150,y: 90},{x:170,y: 90},{x:190,y: 90},{x:210,y: 90},{x:230,y: 90},{x:250,y: 90},{x:270,y: 90},{x:290,y: 90}],
-  [{x:10,y:110},{x:30,y:110},{x:50,y:110},{x:70,y:110},{x:90,y:110},{x:110,y:110},{x:130,y:110},{x:150,y:110},{x:170,y:110},{x:190,y:110},{x:210,y:110},{x:230,y:110},{x:250,y:110},{x:270,y:110},{x:290,y:110}],
-  [{x:10,y:130},{x:30,y:130},{x:50,y:130},{x:70,y:130},{x:90,y:130},{x:110,y:130},{x:130,y:130},{x:150,y:130},{x:170,y:130},{x:190,y:130},{x:210,y:130},{x:230,y:130},{x:250,y:130},{x:270,y:130},{x:290,y:130}],
-  [{x:10,y:150},{x:30,y:150},{x:50,y:150},{x:70,y:150},{x:90,y:150},{x:110,y:150},{x:130,y:150},{x:150,y:150},{x:170,y:150},{x:190,y:150},{x:210,y:150},{x:230,y:150},{x:250,y:150},{x:270,y:150},{x:290,y:150}],
-  [{x:10,y:170},{x:30,y:170},{x:50,y:170},{x:70,y:170},{x:90,y:170},{x:110,y:170},{x:130,y:170},{x:150,y:170},{x:170,y:170},{x:190,y:170},{x:210,y:170},{x:230,y:170},{x:250,y:170},{x:270,y:170},{x:290,y:170}],
-]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function setNodes() {
+  let size = 52;
+  let h = scene.canvas.clientHeight / size
+  let w = scene.canvas.clientWidth / size
+
   let nodes = []
-  for(let i = 0; i < arr.length; i++){
-    for(let k = 0; k < arr[i].length; k++){
-      let x = arr[i][k].x * 2.8;
-      let y = arr[i][k].y * 2.8;
-      let node = new Node(x,y,`${i}${k}`);
+  for(let i = 0; i < h; i++){
+    for(let k = 0; k < w; k++){
+      let x = k * size;
+      let y = i * size + 1;
+      let node = new Node(x,y,`${i}-${k}`);
       if(i > 0){
-        let [nei] = nodes.filter((e) => e.text == `${i-1}${k}`)
+        let [nei] = nodes.filter((e) => e.text == `${i-1}-${k}`)
         node.neighbors.push(nei)
         nei.neighbors.push(node)
         let edge = new Edge(node,nei)
         scene.edges.push(edge)
       }
       if(k > 0){
-        let [nei] = nodes.filter((e) => e.text == `${i}${k-1}`)
+        let [nei] = nodes.filter((e) => e.text == `${i}-${k-1}`)
         node.neighbors.push(nei)
         nei.neighbors.push(node)
         let edge = new Edge(node,nei)
@@ -283,7 +206,7 @@ function dfs(start, target) {
   let stack = [];
   stack.push(start)
   let len = 0;
-  while (stack.length > 0 && len < 300) {
+  while (stack.length > 0 && len < 500) {
     len++
     let current = stack.pop();
     current.visited = true;
@@ -301,16 +224,13 @@ function dfs(start, target) {
 function drawPath(path) {
   for (let i = 0; i < path.length; i++) {
     setTimeout(() => {
-      if (i < 135) {
-        let node = path[i]
-        let edge = scene.findEdge(path[i], path[i + 1])
-        if (node) {
-          node.borderColor = '#f09f';
-          node.color = '#f09f'
-        }
-        if (edge) edge.color = '#f09f'
+      let node = path[i]
+      let edge = scene.findEdge(path[i], path[i + 1])
+      if (node) {
+        node.borderColor = '#f09f';
+        node.color = '#f09f'
       }
-      return
+      if (edge) edge.color = '#f09f'
     }, i * 50)
   }
 }
