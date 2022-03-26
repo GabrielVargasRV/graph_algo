@@ -29,29 +29,24 @@ class Scene {
     this.target = null;
   }
   findSelectedNode(x, y) {
+    let node = null;
     this.nodes.forEach((e) => {
       if (e.x < x && e.x + e.width > x) {
         if (e.y < y && e.y + e.height > y) {
-          this.startClick = +new Date();
-          this.selectedNode = e;
-          this.selectedNode.blocked = this.isCliking ? true : !this.selectedNode.blocked;
+          node = e;
         }
       }
     })
+    return node;
   }
   start() {
     this.updateIntervalID = setInterval(() => {
       this.clear();
       this.update();
     }, 30);
-    document.addEventListener('mousedown', (e) => {
-      this.findSelectedNode(e.x, e.y - 80);
-      this.isCliking = true;
-    });
-    document.addEventListener('mousemove', (e) => {
-      if(this.isCliking) this.findSelectedNode(e.x, e.y - 80);
-    })
-    document.addEventListener('mouseup', this.handleMouseUp.bind(this));
+    this.initMousedown();
+    this.initMousemove();
+    this.initMouseup();
   }
   clear() {
     this.context.clearRect(0, 0, this.width, this.height);
@@ -63,20 +58,42 @@ class Scene {
   stop() {
     clearInterval(this.updateIntervalID);
   }
-  handleMouseUp(e) {
-    this.isCliking = false;
-    if (this.selectedNode) {
-      this.endClick = +new Date();
-      let diff = this.endClick - this.startClick;
-      if (diff < 100 && this.prevSelectedNode && this.selectedNode.id === this.prevSelectedNode.id) {
-        this.selectedNode.blocked = false;
-        if(this.target) this.target.target = false;
-        this.target = this.selectedNode;
-        this.target.target = true;
+  initMousedown(){
+    document.addEventListener('mousedown', (e) => {
+      let node = this.findSelectedNode(e.x, e.y - 80);
+      if(!node) return;
+      this.startClick = +new Date();
+      this.selectedNode = node;
+      this.selectedNode.roll = this.isCliking ? 1 : 0;
+      this.isCliking = true;
+    });
+  }
+  initMouseup(){
+    document.addEventListener('mouseup',(e) => {
+      this.isCliking = false;
+      if (this.selectedNode) {
+        this.endClick = +new Date();
+        let diff = this.endClick - this.startClick;
+        if (diff < 100 && this.prevSelectedNode && this.selectedNode.id === this.prevSelectedNode.id) {
+          this.selectedNode.roll = 2;
+          if(this.target) this.target.roll = 0;
+          this.target = this.selectedNode;
+        }
       }
-    }
-    this.prevSelectedNode = this.selectedNode;
-    this.selectedNode = null;
+      this.prevSelectedNode = this.selectedNode;
+      this.selectedNode = null;
+    });
+  }
+  initMousemove(){
+    document.addEventListener('mousemove', (e) => {
+      if(this.isCliking) {
+        let node = this.findSelectedNode(e.x, e.y - 80);
+        if(!node) return;
+        this.startClick = +new Date();
+        this.selectedNode = node;
+        this.selectedNode.roll = this.isCliking ? 1 : 0;
+      }
+    })
   }
   findNodeById(id) {
     let node = null;
@@ -92,6 +109,23 @@ class Scene {
 
 const scene = new Scene();
 scene.start();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class Edge {
   constructor(neigh1, neigh2) {
@@ -117,6 +151,26 @@ class Edge {
   }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class Node {
   constructor(x, y, text) {
     this.x = x;
@@ -129,8 +183,6 @@ class Node {
     this.borderColor = this.color;
     this.id = uniqid();
     this.visited = false;
-    this.blocked = false;
-    this.target = false;
     this.padlockImg = new Image();
     this.padlockImgAv = false;
     this.targetImgAv = false;
@@ -139,19 +191,33 @@ class Node {
     this.targetImg = new Image();
     this.targetImg.src = targetSrc;
     this.targetImg.onload = () => this.targetImgAv = true;
+    this.roll = 0;
   }
   update() {
     let context = scene.context;
     context.fillStyle = this.color;
     context.fillRect(this.x,this.y,this.width,this.height)
-    if(this.blocked && this.padlockImgAv){
-      context.drawImage(this.padlockImg,this.x + 5,this.y + 5,this.width - 10,this.height - 10)
-    }
-    if(this.target && this.targetImgAv){
-      context.drawImage(this.targetImg,this.x + 5,this.y + 5,this.width - 10,this.height - 10)
-    }
+    if(this.roll === 1 && this.padlockImgAv) context.drawImage(this.padlockImg,this.x + 5,this.y + 5,this.width - 10,this.height - 10);
+    if(this.roll === 2 && this.targetImgAv) context.drawImage(this.targetImg,this.x + 5,this.y + 5,this.width - 10,this.height - 10);
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 let arr = [
   [{x:10,y: 10},{x:30,y: 10},{x:50,y: 10},{x:70,y: 10},{x:90,y: 10},{x:110,y: 10},{x:130,y: 10},{x:150,y: 10},{x:170,y: 10},{x:190,y: 10},{x:210,y: 10},{x:230,y: 10},{x:250,y: 10},{x:270,y: 10},{x:290,y: 10}],
@@ -164,6 +230,22 @@ let arr = [
   [{x:10,y:150},{x:30,y:150},{x:50,y:150},{x:70,y:150},{x:90,y:150},{x:110,y:150},{x:130,y:150},{x:150,y:150},{x:170,y:150},{x:190,y:150},{x:210,y:150},{x:230,y:150},{x:250,y:150},{x:270,y:150},{x:290,y:150}],
   [{x:10,y:170},{x:30,y:170},{x:50,y:170},{x:70,y:170},{x:90,y:170},{x:110,y:170},{x:130,y:170},{x:150,y:170},{x:170,y:170},{x:190,y:170},{x:210,y:170},{x:230,y:170},{x:250,y:170},{x:270,y:170},{x:290,y:170}],
 ]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function setNodes() {
   let nodes = []
@@ -207,7 +289,7 @@ function dfs(start, target) {
     current.visited = true;
     path.push(current)
     scene.findNodeById(current.id).neighbors.forEach((e) => {
-      if (!e.visited && !e.blocked) stack.push(e)
+      if (!e.visited && e.roll !== 1) stack.push(e)
     })
     if (target.id === current.id) {
       stack = []
