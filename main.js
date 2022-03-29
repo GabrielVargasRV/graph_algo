@@ -3,7 +3,10 @@ import padlockSrc from "./assets/candado.png";
 import targetSrc from "./assets/target.png";
 import startSrc from "./assets/start.png";
 
-const startBtn = document.getElementById('start')
+const startBtn = document.getElementById('start');
+const selectElement = document.getElementById('algorithms');
+
+console.log(selectElement.value)
 
 // function random(min, max) {
 //   min = Math.ceil(min);
@@ -255,6 +258,22 @@ function dfs(start, target) {
   drawPath(visited)
 }
 
+function bfs(start, target){
+  let stack = [ start ];
+  const visited = new Set();
+
+
+  while (stack.length > 0) {
+    let current = stack.shift();
+    scene.findNodeById(current.id).neighbors.forEach((e) => {
+      if (e.roll !== 1 && !visited.has(current.id)) stack.push(e)
+    })
+    visited.add(current.id)
+    if (target.id === current.id) stack = []
+  }
+  drawPath(visited)
+}
+
 function drawPath(path) {
   let index = 0; 
   scene.path = path;
@@ -269,5 +288,18 @@ function drawPath(path) {
 
 startBtn.onclick = () => {
   scene.clearPath();
-  dfs(scene.startNode, scene.target)
+
+
+  switch (selectElement.value) {
+    case 'depth':
+      dfs(scene.startNode, scene.target)
+      break;
+  
+    case 'breadth':
+      bfs(scene.startNode, scene.target)
+      break;
+    default:
+      dfs(scene.startNode, scene.target)
+      break;
+  }
 }
