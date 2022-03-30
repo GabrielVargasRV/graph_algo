@@ -1,4 +1,4 @@
-import uniqid from "uniqid";
+// import uniqid from "uniqid";
 import padlockSrc from "./assets/candado.png";
 import targetSrc from "./assets/target.png";
 import startSrc from "./assets/start.png";
@@ -23,7 +23,6 @@ class Scene {
     this.canvas.width = this.width;
     this.canvas.height = this.height;
 
-
     this.nodes = new Map();
     this.edges = [];
     this.path = null;
@@ -33,11 +32,13 @@ class Scene {
     this.nodeSize = 30;
     this.holdingStart = false;
     this.holdingTarget = false;
+
+    this.algoDone = false;
   }
 
 
   findSelectedNode(x, y) {
-    let str = `${Math.floor(y/this.nodeSize)}-${Math.floor(x/this.nodeSize)}`;
+    let str = `${Math.floor(y / this.nodeSize)}-${Math.floor(x / this.nodeSize)}`;
     return this.nodes.get(str);
   }
 
@@ -69,20 +70,20 @@ class Scene {
   }
 
 
-  initMousedown(){
+  initMousedown() {
     document.addEventListener('mousedown', (e) => {
       let node = this.findSelectedNode(e.x, e.y - 80);
-      if(!node) return;
+      if (!node) return;
       this.isCliking = true;
-      if(node.roll === 3) this.holdingStart = true;
-      else if(node.roll === 2) this.holdingTarget = true;
+      if (node.roll === 3) this.holdingStart = true;
+      else if (node.roll === 2) this.holdingTarget = true;
       else node.roll = node.roll === 1 ? 0 : 1;
     });
   }
 
 
-  initMouseup(){
-    document.addEventListener('mouseup',(e) => {
+  initMouseup() {
+    document.addEventListener('mouseup', (e) => {
       this.isCliking = false;
       this.holdingStart = false;
       this.holdingTarget = false;
@@ -90,22 +91,23 @@ class Scene {
   }
 
 
-  initMousemove(){
+  initMousemove() {
     document.addEventListener('mousemove', (e) => {
       let x = e.x;
       let y = e.y - 80;
-      if(!this.isCliking) return;
-      let node = this.findSelectedNode(x,y);
-      if(!node) return;
-      if(this.holdingStart){
+      if (!this.isCliking) return;
+      let node = this.findSelectedNode(x, y);
+      if (!node) return;
+      if (this.holdingStart) {
         this.startNode.roll = 0;
         this.startNode = node;
         this.startNode.roll = 3;
-      }else if(this.holdingTarget){
+      } else if (this.holdingTarget) {
         this.target.roll = 0;
         this.target = node;
         this.target.roll = 2;
-      }else{
+        if (this.algoDone) this.clearPath();
+      } else {
         node.roll = this.isCliking ? 1 : 0;
       }
     })
@@ -123,9 +125,9 @@ class Scene {
     return edge;
   }
 
-  clearPath(){
-    if(!this.path) return;
-    for(let id of this.path){
+  clearPath() {
+    if (!this.path) return;
+    for (let id of this.path) {
       scene.nodes.get(id).color = '#00ff00'
     }
   }
@@ -187,10 +189,10 @@ class Node {
   update() {
     let context = scene.context;
     context.fillStyle = this.color;
-    context.fillRect(this.x,this.y,this.width - 2,this.height - 2)
-    if(this.roll === 1 && this.padlockImgAv) context.drawImage(this.padlockImg,this.x + 4,this.y + 3,this.width - 10,this.height - 10);
-    if(this.roll === 2 && this.targetImgAv) context.drawImage(this.targetImg,this.x + 4,this.y + 3,this.width - 10,this.height - 10);
-    if(this.roll === 3 && this.startImgAv) context.drawImage(this.startImg,this.x + 4,this.y + 3,this.width - 10,this.height - 10);
+    context.fillRect(this.x, this.y, this.width - 2, this.height - 2)
+    if (this.roll === 1 && this.padlockImgAv) context.drawImage(this.padlockImg, this.x + 4, this.y + 3, this.width - 10, this.height - 10);
+    if (this.roll === 2 && this.targetImgAv) context.drawImage(this.targetImg, this.x + 4, this.y + 3, this.width - 10, this.height - 10);
+    if (this.roll === 3 && this.startImgAv) context.drawImage(this.startImg, this.x + 4, this.y + 3, this.width - 10, this.height - 10);
   }
 }
 
@@ -200,30 +202,30 @@ function setNodes() {
   let h = scene.canvas.clientHeight / size
   let w = scene.canvas.clientWidth / size
 
-  for(let i = 0; i < h; i++){
-    for(let k = 0; k < w; k++){
+  for (let i = 0; i < h; i++) {
+    for (let k = 0; k < w; k++) {
       let x = k * size;
       let y = i * size + 1;
       let id = `${i}-${k}`;
-      let node = new Node(x,y,id);
+      let node = new Node(x, y, id);
 
-      scene.nodes.set(id,node)
+      scene.nodes.set(id, node)
 
-      if(k > 0){
-        let neighbor = scene.nodes.get(`${i}-${k-1}`)
+      if (k > 0) {
+        let neighbor = scene.nodes.get(`${i}-${k - 1}`)
         node.neighbors.push(neighbor)
         neighbor.neighbors.push(node)
 
 
-        let edge = new Edge(node,neighbor)
+        let edge = new Edge(node, neighbor)
         scene.edges.push(edge)
       }
-      if(i > 0){
-        let neighbor = scene.nodes.get(`${i-1}-${k}`)
+      if (i > 0) {
+        let neighbor = scene.nodes.get(`${i - 1}-${k}`)
         node.neighbors.push(neighbor)
         neighbor.neighbors.push(node)
 
-        let edge = new Edge(node,neighbor)
+        let edge = new Edge(node, neighbor)
         scene.edges.push(edge)
       }
     }
@@ -243,10 +245,8 @@ function setNodes() {
 setNodes();
 
 function dfs(start, target) {
-  let stack = [ start ];
+  let stack = [start];
   const visited = new Set();
-
-
   while (stack.length > 0) {
     let current = stack.pop();
     scene.findNodeById(current.id).neighbors.forEach((e) => {
@@ -258,38 +258,80 @@ function dfs(start, target) {
   drawPath(visited)
 }
 
-function bfs(start, target){
-  let stack = [ start ];
+function bfs(start, target) {
+  let queue = [start];
   const visited = new Set();
-
-
-  while (stack.length > 0) {
-    let current = stack.shift();
+  while (queue.length > 0) {
+    let current = queue.shift();
     scene.findNodeById(current.id).neighbors.forEach((e) => {
-      if (e.roll !== 1 && !visited.has(current.id)) stack.push(e)
+      if (e.roll !== 1 && !visited.has(current.id)) queue.push(e)
     })
     visited.add(current.id)
-    if (target.id === current.id) stack = []
+    console.log(queue)
+    if (target.id === current.id) return drawPath(visited)
   }
   drawPath(visited)
 }
 
-function drawPath(path) {
-  let index = 0; 
-  scene.path = path;
+function shortestPath(start, target) {
+  let queue = [{ value: start, acentors: [] }];
+  const visited = new Set();
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+    if (visited.has(current.value.id)) continue;
+    visited.add(current.value.id);
+
+    scene.findNodeById(current.value.id).neighbors.forEach((neighbor) => {
+      if (visited.has(neighbor.id)) return
+      if (neighbor.roll !== 1) {
+        queue.push({
+          value: neighbor,
+          acentors: current.acentors.concat([current.value.id])
+        })
+      }
+    })
+
+    if (current.value.id === target.id) {
+      drawPath(visited, '#00ff', current.acentors.concat(current.value.id), '#fff')
+    }
+  }
+
+}
+
+function drawPath(path, color = '#00ff', acentors = [], acentorsColor = '#fff') {
+  let delay = 5;
+  let index = 0;
+  scene.acentors = acentors;
+  
   for (let id of path) {
     index++;
     setTimeout(() => {
       let node = scene.nodes.get(id);
-      node.color = '#f09f';
-    }, index * 10)
+      node.color = color;
+    }, index * delay)
   }
+
+  if (acentors) {
+    for (let id of acentors) {
+      index++;
+      setTimeout(() => {
+        let node = scene.nodes.get(id);
+        node.color = acentorsColor;
+      }, index * delay)
+    }
+  }
+  scene.path = [...path,...acentors];
+  return
 }
 
 startBtn.onclick = () => {
+  handleOnClick()
+}
+
+
+const handleOnClick = () => {
   scene.clearPath();
-
-
   switch (selectElement.value) {
     case 'depth':
       dfs(scene.startNode, scene.target)
@@ -298,8 +340,14 @@ startBtn.onclick = () => {
     case 'breadth':
       bfs(scene.startNode, scene.target)
       break;
+  
+    case 'shortest':
+      shortestPath(scene.startNode, scene.target)
+      break;
+  
     default:
       dfs(scene.startNode, scene.target)
       break;
   }
+
 }
