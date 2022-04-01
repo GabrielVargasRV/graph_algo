@@ -1,17 +1,9 @@
-// import uniqid from "uniqid";
 import padlockSrc from "./assets/candado.png";
 import targetSrc from "./assets/target.png";
 import startSrc from "./assets/start.png";
 
 const startBtn = document.getElementById('start');
 const selectElement = document.getElementById('algorithms');
-
-// function random(min, max) {
-//   min = Math.ceil(min);
-//   max = Math.floor(max);
-//   return Math.floor(Math.random() * (max - min) + min); //The maximum is exclusive and the minimum is inclusive
-// }
-
 
 class Scene {
   constructor() {
@@ -167,6 +159,7 @@ class Edge {
     context.strokeStyle = this.color;
     context.beginPath();
     context.lineWidth = 2;
+    // draw line from neighbor 1 to neighbor 2
     const fromX = this.n1.x + this.n1.width / 2
     const fromY = this.n1.y + this.n1.height / 2
     const toX = this.n2.x + this.n2.width / 2
@@ -229,6 +222,7 @@ function setNodes() {
       scene.nodes.set(id, node)
 
       if (k > 0) {
+        //link the current node with the node at the left
         let neighbor = scene.nodes.get(`${i}-${k - 1}`)
         node.neighbors.push(neighbor)
         neighbor.neighbors.push(node)
@@ -238,6 +232,7 @@ function setNodes() {
         scene.edges.push(edge)
       }
       if (i > 0) {
+        //link the current node with the node above
         let neighbor = scene.nodes.get(`${i - 1}-${k}`)
         node.neighbors.push(neighbor)
         neighbor.neighbors.push(node)
@@ -248,7 +243,7 @@ function setNodes() {
     }
   }
 
-
+  // set the default position of the start and target node
   const startX = Math.floor((scene.width / 4) / scene.nodeSize);
   const startY = Math.floor((scene.height / 2) / scene.nodeSize);
   const targetX = startX * 3;
@@ -261,45 +256,58 @@ function setNodes() {
 
 setNodes();
 
+//Depth-first search algo
 function dfs(start, target) {
   let stack = [start];
   const visited = new Set();
+
+
   while (stack.length > 0) {
     let current = stack.pop();
     scene.findNodeById(current.id).neighbors.forEach((e) => {
+      // if the neighbor is not locked add it to the stack
       if (e.roll !== 1 && !visited.has(current.id)) stack.push(e)
     })
+    // mark the current node as visited
     visited.add(current.id)
     if (target.id === current.id) stack = []
   }
   drawPath(visited)
 }
 
+//Breadth-first search algo
 function bfs(start, target) {
   let queue = [start];
   const visited = new Set();
   while (queue.length > 0) {
     let current = queue.shift();
     scene.findNodeById(current.id).neighbors.forEach((e) => {
+      // if the neighbor is not locked add it to the stack
       if (e.roll !== 1 && !visited.has(current.id)) queue.push(e)
     })
+    // mark the current node as visited
     visited.add(current.id)
     if (target.id === current.id) return drawPath(visited)
   }
   drawPath(visited)
 }
 
+//Shortest path algo
 function shortestPath(start, target) {
   let queue = [{ value: start, acentors: [] }];
   const visited = [];
 
   while (queue.length > 0) {
     const current = queue.shift();
+
+    // check if the current node is not already visited
     if (visited.includes(current.value.id)) continue;
+    //add it to the visited list
     visited.push(current.value.id);
 
+    //add neighbors to the queue
     scene.findNodeById(current.value.id).neighbors.forEach((neighbor) => {
-      if (visited.includes(neighbor.id)) return
+      // if the neighbor is not locked, add it to queue
       if (neighbor.roll !== 1) {
         queue.push({
           value: neighbor,
@@ -308,8 +316,11 @@ function shortestPath(start, target) {
       }
     })
 
+
+    //if the current node is the target, draw the animation and clear the queue array
     if (current.value.id === target.id) {
       drawPath(visited, '#00ff', current.acentors.concat(current.value.id), '#fff')
+      queue = [];
     }
   }
 
@@ -365,5 +376,4 @@ const handleOnClick = () => {
       dfs(scene.startNode, scene.target)
       break;
   }
-
 }
