@@ -6,13 +6,12 @@ import startSrc from "./assets/start.png";
 const startBtn = document.getElementById('start');
 const selectElement = document.getElementById('algorithms');
 
-console.log(selectElement.value)
-
 // function random(min, max) {
 //   min = Math.ceil(min);
 //   max = Math.floor(max);
 //   return Math.floor(Math.random() * (max - min) + min); //The maximum is exclusive and the minimum is inclusive
 // }
+
 
 class Scene {
   constructor() {
@@ -25,15 +24,13 @@ class Scene {
 
     this.nodes = new Map();
     this.edges = [];
-    this.path = null;
+    this.animationPath = null;
     this.isCliking = false;
     this.target = null;
     this.startNode = null;
     this.nodeSize = 30;
     this.holdingStart = false;
     this.holdingTarget = false;
-
-    this.algoDone = false;
   }
 
 
@@ -45,6 +42,7 @@ class Scene {
 
   start() {
     this.updateIntervalID = setInterval(() => {
+      //clear canvas every frame
       this.clear();
       this.update();
     }, 30);
@@ -55,12 +53,14 @@ class Scene {
 
 
   clear() {
+    // clear canvas
     this.context.clearRect(0, 0, this.width, this.height);
   }
 
 
   update() {
-    this.edges.forEach((e) => e.update())
+    //update all nodes
+    // this.edges.forEach((e) => e.update())
     this.nodes.forEach((node) => node.update());
   }
 
@@ -72,18 +72,22 @@ class Scene {
 
   initMousedown() {
     document.addEventListener('mousedown', (e) => {
+      //find the node that the mouse is hovering over
       let node = this.findSelectedNode(e.x, e.y - 80);
       if (!node) return;
       this.isCliking = true;
+      // if the node is the starting node or the target node, grab it for drag and drop.
       if (node.roll === 3) this.holdingStart = true;
-      else if (node.roll === 2) this.holdingTarget = true;
-      else node.roll = node.roll === 1 ? 0 : 1;
+      if (node.roll === 2) this.holdingTarget = true;
+      //toggle for padlock node
+      if(node.roll <= 1) node.roll = node.roll === 1 ? 0 : 1;
     });
   }
 
 
   initMouseup() {
     document.addEventListener('mouseup', (e) => {
+      //set all mouse relate variables to default
       this.isCliking = false;
       this.holdingStart = false;
       this.holdingTarget = false;
@@ -93,20 +97,30 @@ class Scene {
 
   initMousemove() {
     document.addEventListener('mousemove', (e) => {
+      // coords in canvas
+      // 80 is the header height
       let x = e.x;
       let y = e.y - 80;
+
+      //if the user is not clicking anythings, return
       if (!this.isCliking) return;
+      //find the node that the mouse is hovering over
       let node = this.findSelectedNode(x, y);
       if (!node) return;
+
+      // if the user is grabbing the starting node
       if (this.holdingStart) {
         this.startNode.roll = 0;
         this.startNode = node;
         this.startNode.roll = 3;
-      } else if (this.holdingTarget) {
+        this.clearAnimation();
+      } 
+      // if the user is grabbing the target node
+      else if (this.holdingTarget) {
         this.target.roll = 0;
         this.target = node;
         this.target.roll = 2;
-        if (this.algoDone) this.clearPath();
+        this.clearAnimation();
       } else {
         node.roll = this.isCliking ? 1 : 0;
       }
@@ -120,16 +134,19 @@ class Scene {
 
 
   findEdge(n1, n2) {
+    // find edge between two nodes
     let edge = null;
     this.edges.forEach(e => e.link.has(n1) && e.link.has(n2) ? edge = e : null)
     return edge;
   }
 
-  clearPath() {
-    if (!this.path) return;
-    for (let id of this.path) {
+  clearAnimation() {
+    //clear the las animation
+    if (!this.animationPath) return;
+    for (let id of this.animationPath) {
       scene.nodes.get(id).color = '#00ff00'
     }
+    this.animatonPath = [];
   }
 }
 
@@ -202,7 +219,7 @@ function setNodes() {
   let h = scene.canvas.clientHeight / size
   let w = scene.canvas.clientWidth / size
 
-  for (let i = 0; i < h; i++) {
+  for (let i = 0; i < h - 1; i++) {
     for (let k = 0; k < w; k++) {
       let x = k * size;
       let y = i * size + 1;
@@ -267,7 +284,6 @@ function bfs(start, target) {
       if (e.roll !== 1 && !visited.has(current.id)) queue.push(e)
     })
     visited.add(current.id)
-    console.log(queue)
     if (target.id === current.id) return drawPath(visited)
   }
   drawPath(visited)
@@ -275,15 +291,15 @@ function bfs(start, target) {
 
 function shortestPath(start, target) {
   let queue = [{ value: start, acentors: [] }];
-  const visited = new Set();
+  const visited = [];
 
   while (queue.length > 0) {
     const current = queue.shift();
-    if (visited.has(current.value.id)) continue;
-    visited.add(current.value.id);
+    if (visited.includes(current.value.id)) continue;
+    visited.push(current.value.id);
 
     scene.findNodeById(current.value.id).neighbors.forEach((neighbor) => {
-      if (visited.has(neighbor.id)) return
+      if (visited.includes(neighbor.id)) return
       if (neighbor.roll !== 1) {
         queue.push({
           value: neighbor,
@@ -300,7 +316,7 @@ function shortestPath(start, target) {
 }
 
 function drawPath(path, color = '#00ff', acentors = [], acentorsColor = '#fff') {
-  let delay = 5;
+  let delay = 3;
   let index = 0;
   scene.acentors = acentors;
   
@@ -321,7 +337,7 @@ function drawPath(path, color = '#00ff', acentors = [], acentorsColor = '#fff') 
       }, index * delay)
     }
   }
-  scene.path = [...path,...acentors];
+  scene.animationPath = [...path,...acentors];
   return
 }
 
@@ -331,7 +347,7 @@ startBtn.onclick = () => {
 
 
 const handleOnClick = () => {
-  scene.clearPath();
+  scene.clearAnimation();
   switch (selectElement.value) {
     case 'depth':
       dfs(scene.startNode, scene.target)
